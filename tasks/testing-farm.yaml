@@ -50,6 +50,5 @@ spec:
         - name: TESTING_FARM_API_URL
           value: $(params.TESTING_FARM_API_URL)
       script: |
-        #!/usr/bin/env bash -x
         false
 
