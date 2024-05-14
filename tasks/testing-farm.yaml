@@ -28,11 +28,23 @@ spec:
     - name: testing-farm-secret
       secret:
         secretName: testing-farm-secret
+    - name: interim-gitlab-token
+      secret:
+        secretName: interim-gitlab-token
+    - name: registry-secret
+      secret:
+        secretName: registry-secret 
   steps:
     - image: quay.io/testing-farm/cli:latest
       volumeMounts:
         - name: testing-farm-secret
-          mountPath: "/etc/secrets"
+          mountPath: "/etc/secrets/testing-farm-secret"
+          readOnly: true
+        - name: interim-gitlab-token
+          mountPath: "/etc/secrets/interim-gitlab-token"
+          readOnly: true
+        - name: registry-secret
+          mountPath: "/etc/secrets/registry-secret"
           readOnly: true
       env:
         - name: SNAPSHOT
@@ -50,6 +62,12 @@ spec:
         - name: TESTING_FARM_API_URL
           value: $(params.TESTING_FARM_API_URL)
       script: |
-        env
-        false
-
+            GIT_URL=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['url'])")
+            GIT_REF=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['revision'])")
+            
+            export TESTING_FARM_API_TOKEN=$(cat /etc/secrets/testing-farm-secret/testing-farm-token)
+            export TMT_GIT_CREDENTIALS_URL_gl="gitlab.com"
+            export TMT_GIT_CREDENTIALS_VALUE_gl="pad:$(cat /etc/secrets/interim-gitlab-token/token)"
+            
+            tail /etc/secrets/registry-secret/*
+            
