@@ -62,6 +62,8 @@ spec:
         - name: TESTING_FARM_API_URL
           value: $(params.TESTING_FARM_API_URL)
       script: |
+            #!/usr/bin/env bash
+            set -x
             GIT_URL=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['url'])")
             GIT_REF=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['revision'])")
             
