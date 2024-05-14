@@ -33,7 +33,10 @@ spec:
         secretName: interim-gitlab-token
     - name: registry-secret
       secret:
-        secretName: registry-secret 
+        secretName: registry-secret
+    - name:   varnish-6-mvp-pull
+      secret:
+        secretName:   varnish-6-mvp-pull  
   steps:
     - image: quay.io/testing-farm/cli:latest
       volumeMounts:
@@ -45,6 +48,9 @@ spec:
           readOnly: true
         - name: registry-secret
           mountPath: "/etc/secrets/registry-secret"
+          readOnly: true
+        - name:   varnish-6-mvp-pull 
+          mountPath: "/etc/secrets/varnish-6-mvp-pull"
           readOnly: true
       env:
         - name: SNAPSHOT
@@ -73,3 +79,7 @@ spec:
             
             tail /etc/secrets/registry-secret/*
             
+            find /etc/secrets    
+            
+            cat /etc/secrets/varnish-6-mvp-pull/.dockerconfigjson
+        
