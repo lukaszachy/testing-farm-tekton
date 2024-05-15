@@ -8,12 +8,16 @@ spec:
     - name: SNAPSHOT
       description: A list of container images that should undergo testing
     - name: GIT_URL
+      default: ""
       description: URL of the GIT repository that contains the tests.
+    - name: TMT_PLAN
+      default: "."
+      description: Name filter for plans defined in the repo.
     - name: GIT_REF
-      default: "main"
+      default: ""
       description: Branch of the git repository used containing the tests
     - name: COMPOSE
-      default: "Fedora-Rawhide"
+      default: "Fedora-40"
       description: Compose to use for the system-under-test.
     - name: ARCH
       default: "x86_64"
@@ -28,29 +32,23 @@ spec:
     - name: testing-farm-secret
       secret:
         secretName: testing-farm-secret
+    - name:   varnish-6-mvp-pull
+      secret:
+        secretName:   varnish-6-mvp-pull
     - name: interim-gitlab-token
       secret:
         secretName: interim-gitlab-token
-    - name: registry-secret
-      secret:
-        secretName: registry-secret
-    - name:   varnish-6-mvp-pull
-      secret:
-        secretName:   varnish-6-mvp-pull  
   steps:
     - image: quay.io/testing-farm/cli:latest
       volumeMounts:
         - name: testing-farm-secret
           mountPath: "/etc/secrets/testing-farm-secret"
           readOnly: true
+        - name:   varnish-6-mvp-pull
+          mountPath: "/etc/secrets/varnish-6-mvp-pull"
+          readOnly: true
         - name: interim-gitlab-token
           mountPath: "/etc/secrets/interim-gitlab-token"
-          readOnly: true
-        - name: registry-secret
-          mountPath: "/etc/secrets/registry-secret"
-          readOnly: true
-        - name:   varnish-6-mvp-pull 
-          mountPath: "/etc/secrets/varnish-6-mvp-pull"
           readOnly: true
       env:
         - name: SNAPSHOT
@@ -67,19 +65,40 @@ spec:
           value: $(params.TIMEOUT)
         - name: TESTING_FARM_API_URL
           value: $(params.TESTING_FARM_API_URL)
+        - name: TMT_PLAN
+          value: $(params.TMT_PLAN)
       script: |
             #!/usr/bin/env bash
-            set -x
-            GIT_URL=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['url'])")
-            GIT_REF=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['revision'])")
-            
             export TESTING_FARM_API_TOKEN=$(cat /etc/secrets/testing-farm-secret/testing-farm-token)
-            export TMT_GIT_CREDENTIALS_URL_gl="gitlab.com"
-            export TMT_GIT_CREDENTIALS_VALUE_gl="pad:$(cat /etc/secrets/interim-gitlab-token/token)"
-            
-            tail /etc/secrets/registry-secret/*
-            
-            find /etc/secrets    
-            
-            cat /etc/secrets/varnish-6-mvp-pull/.dockerconfigjson
-        
+            export GITLAB_TOKEN="$(cat /etc/secrets/interim-gitlab-token/token)"
+
+            # Prepare secrets for testing farm
+            secrets_file=$(mktemp)
+            echo "AUTHFILE_b64: \"$(base64 -w 0 /etc/secrets/varnish-6-mvp-pull/.dockerconfigjson)\"" >> $secrets_file
+            echo "GITLAB_TOKEN: \"$GITLAB_TOKEN\"" >> $secrets_file
+
+            if [[ -z "$GIT_URL" ]]; then
+              GIT_URL=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['url'])")
+            fi
+
+            if [[ -z "$GIT_REF" ]]; then
+              GIT_REF=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['revision'])")
+            fi
+
+            # Inject token, otherwise testing farm can't clone the repo
+            GIT_URL="$(echo "$GIT_URL" | sed "s;/\(gitlab.com\);\/token:$GITLAB_TOKEN@\1;")"
+
+            context_file=$(mktemp)
+            echo 'trigger: commit' > $context_file
+            echo 'initiator: rhtap' >> $context_file
+
+            testing-farm request \
+                --secret @$secrets_file \
+                --environment SNAPSHOT_b64="$(echo ${SNAPSHOT} | base64 -w 0)" \
+                --plan "${TMT_PLAN}" \
+                --context @$context_file \
+                --git-url "${GIT_URL}" \
+                --git-ref "${GIT_REF}" \
+                --compose "${COMPOSE}" \
+                --arch "${ARCH}" \
+                --timeout "${TIMEOUT}"

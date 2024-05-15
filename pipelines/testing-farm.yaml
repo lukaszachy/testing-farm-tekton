@@ -1,38 +1,37 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: testing-farm
+  name: tmt-via-testing-farm
 spec:
   description: >-
-    Expects a list of container images to be provided via the SNAPSHOT parameter.
-    A secret containing the testing-farm API token should be made available via a secret with the name `testing-farm-secret` containing a key `testing-farm-token`.
+    Expects secrets:
+      `testing-farm-secret` containing a key `testing-farm-token` with testing-farm API token
+      `varnish-6-mvp-pull` containing pull secret in `.dockerconfigjson`
+      `interim-gitlab-token` containing a key `token` with gitlab token with r/o to the repo
   params:
     - name: SNAPSHOT
       description: A list of container images that should undergo testing
-      type: string
     - name: GIT_URL
+      default: ""
       description: URL of the GIT repository that contains the tests.
-      type: string
     - name: GIT_REF
-      default: "main"
+      default: ""
       description: Branch of the git repository used containing the tests
-      type: string
+    - name: TMT_PLAN
+      default: "."
+      description: Name filter for plans defined in the repo.      
     - name: COMPOSE
-      default: "Fedora-Rawhide"
+      default: "Fedora-40"
       description: Compose to use for the system-under-test.
-      type: string
     - name: ARCH
       default: "x86_64"
       description: Comma-separated list of architectures to run against.
-      type: string
     - name: TIMEOUT
       default: "720"
       description: Set the timeout for the request in minutes. If the test takes longer than this, it will be terminated.
-      type: string
     - name: TESTING_FARM_API_URL
       default: https://api.dev.testing-farm.io/v0.1
       description: The testing-farm instance API to use
-      type: string
   tasks:
     - name: testing-farm
       taskRef:
