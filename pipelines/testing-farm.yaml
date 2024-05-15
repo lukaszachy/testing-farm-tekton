@@ -34,6 +34,7 @@ spec:
       description: The testing-farm instance API to use
   tasks:
     - name: testing-farm
+      timeout: "5h"
       taskRef:
         resolver: git
         params:
