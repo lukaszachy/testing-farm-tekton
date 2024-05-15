@@ -92,6 +92,8 @@ spec:
             echo 'trigger: commit' > $context_file
             echo 'initiator: rhtap' >> $context_file
 
+            set -x
+            declare -p SNAPSHOT
             testing-farm request \
                 --secret @$secrets_file \
                 --environment SNAPSHOT_b64="$(echo ${SNAPSHOT} | base64 -w 0)" \
