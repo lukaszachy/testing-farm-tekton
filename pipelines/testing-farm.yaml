@@ -50,6 +50,8 @@ spec:
           value: $(params.GIT_URL)
         - name: GIT_REF
           value: $(params.GIT_REF)
+        - name: TMT_PLAN
+          value: $(params.TMT_PLAN)
         - name: COMPOSE
           value: $(params.COMPOSE)
         - name: ARCH
