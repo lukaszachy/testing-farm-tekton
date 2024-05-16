@@ -92,7 +92,8 @@ spec:
             echo 'trigger: commit' > $context_file
             echo 'initiator: rhtap' >> $context_file
 
-            set -x
+            tf_log=$(mktemp)
+            
             declare -p SNAPSHOT
             testing-farm request \
                 --secret @$secrets_file \
@@ -103,4 +104,36 @@ spec:
                 --git-ref "${GIT_REF}" \
                 --compose "${COMPOSE}" \
                 --arch "${ARCH}" \
-                --timeout "${TIMEOUT}"
+                --timeout "${TIMEOUT}" \
+                --no-wait |& tee $tf_log
+                
+            # we cannot use --wait as tf cli suffer https://issues.redhat.com/browse/TFT-2604
+            request_url=$(grep -oE "${TESTING_FARM_API_URL}.*$" $tf_log)
+            helper_script=$(mktemp)
+            
+            cat <<<EOF > $helper_script
+            import requests
+            import sys
+            import time          
+
+            while True:
+                ret = requests.get(sys.argv[1]).json()
+                state = ret['state']
+                print(f'{state=}', file=sys.stderr)
+                if state not in ['running']:
+                    break
+                time.sleep(60) 
+
+            # not running...
+            if state != 'complete':
+                raise SystemExit(2)
+                
+            overal_result = ret['result']['overall']
+            print(f'{overal_result=}', file=sys.stderr)
+
+            if overal_result != 'passed':
+                raise SystemExit(1)
+            EOF
+            
+            python3 $helper_script $request_url
+            
