@@ -4,15 +4,21 @@ import sys
 import time  
 import json
 
+first_dot=False
+
+SLEEP = 60
+
 while True:
     ret = requests.get(sys.argv[1]).json()
     state = ret['state']
     print(f'{state=}', file=sys.stderr)
     if state not in ['new', 'queued', 'running']:
-        print(f'Stop waiting as {state=}', file=sys.stderr)
+        print(f'\nStop waiting as {state=}', file=sys.stderr)
         break
-    print(time.gmtime(), file=sys.stderr)
-    time.sleep(60) 
+    if first_dot:
+        print(f"Sleep {SLEEP}s between checks", end='', file=sys.stderr)
+    print('.', end='',file=sys.stderr)
+    time.sleep(SLEEP) 
 
 f_out = sys.argv[2]
 with open(f_out, 'w') as f:
