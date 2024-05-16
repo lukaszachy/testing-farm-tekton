@@ -41,7 +41,7 @@ spec:
           - name: url
             value: https://github.com/lukaszachy/testing-farm-tekton
           - name: revision
-            value: main
+            value: trying
           - name: pathInRepo
             value: tasks/testing-farm.yaml
       params:
