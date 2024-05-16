@@ -115,8 +115,8 @@ spec:
             
             echo "Will be checking $request_url ..."
             
-            # Fetch helper script
-            curl -s https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py > $helper_script
+            # Fetch helper script (no curl here...)
+            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py -O $helper_script
             # And run it
             python3 $helper_script $request_url
             
