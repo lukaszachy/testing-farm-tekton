@@ -106,34 +106,17 @@ spec:
                 --arch "${ARCH}" \
                 --timeout "${TIMEOUT}" \
                 --no-wait |& tee $tf_log
+            
+            echo "scheduled, now proceeding to wait on TF to finish its job"
                 
             # we cannot use --wait as tf cli suffer https://issues.redhat.com/browse/TFT-2604
             request_url=$(grep -oE "${TESTING_FARM_API_URL}.*$" $tf_log)
             helper_script=$(mktemp)
             
-            cat <<<EOF > $helper_script
-            import requests
-            import sys
-            import time          
-
-            while True:
-                ret = requests.get(sys.argv[1]).json()
-                state = ret['state']
-                print(f'{state=}', file=sys.stderr)
-                if state not in ['running']:
-                    break
-                time.sleep(60) 
-
-            # not running...
-            if state != 'complete':
-                raise SystemExit(2)
-                
-            overal_result = ret['result']['overall']
-            print(f'{overal_result=}', file=sys.stderr)
-
-            if overal_result != 'passed':
-                raise SystemExit(1)
-            EOF
+            echo "Will be checking $request_url ..."
             
+            # Fetch helper script
+            curl -s https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py > $helper_script
+            # And run it
             python3 $helper_script $request_url
             
