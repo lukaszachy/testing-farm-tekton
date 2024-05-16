@@ -28,6 +28,13 @@ spec:
     - name: TESTING_FARM_API_URL
       default: https://api.dev.testing-farm.io/v0.1
       description: The testing-farm instance API to use
+  results:
+    - description: Link to track the request
+      name: REQUEST_URL
+    - description: Link to the Testing Farm result overview  
+      name: ARTIFACTS_URL
+    - description: Test outcome
+      name: TEST_OUTPUT
   volumes:
     - name: testing-farm-secret
       secret:
@@ -111,12 +118,24 @@ spec:
                 
             # we cannot use --wait as tf cli suffer https://issues.redhat.com/browse/TFT-2604
             request_url=$(grep -oE "${TESTING_FARM_API_URL}.*$" $tf_log)
-            helper_script=$(mktemp)
+            echo "${request_url}" > $(results.REQUEST_URL.path)
+            
+            watcher=$(mktemp)
+            parser=$(mktemp)
+            
+            request_outcome=$(mktemp)
             
             echo "Will be checking $request_url ..."
             
-            # Fetch helper script (no curl here...)
-            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py -O $helper_script
-            # And run it
-            python3 $helper_script $request_url
+            # Fetch helper scripts (no curl here...)
+            # FIXME 'trying' -> 'main'
+            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/trying/scripts/tf-watch.py -O $watcher
+            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/trying/scripts/tf-parse.py -O $parser
+
+            # Watch until request finishes
+            python3 $watcher $request_url $request_outcome
+            
+            # Parse and make the output
+            python3 $parser $request_outcome $(results.ARTIFACTS_URL.path) $(results.TEST_OUTPUT.path)
+            
             
