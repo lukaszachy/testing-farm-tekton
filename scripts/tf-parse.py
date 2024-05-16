@@ -34,7 +34,10 @@ test_output = {
 state = request['state']    
 if state != 'complete':
     test_output['note'] = f'TF request finished as {state}'
-overall = request['result']['overall']
+try:
+    overall = request['result']['overall']
+except (TypeError, KeyError):
+    overall = 'unknown'
 
 # Nothing will create 'WARNING'
 overall2tekton = {
