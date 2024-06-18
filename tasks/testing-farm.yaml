@@ -74,6 +74,14 @@ spec:
           value: $(params.TESTING_FARM_API_URL)
         - name: TMT_PLAN
           value: $(params.TMT_PLAN)
+        - name: PULL_REQUEST_NUMBER
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['pac.test.appstudio.openshift.io/pull-request']
+        - name: GIT_PROVIDER
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['pac.test.appstudio.openshift.io/git-provider']            
       script: |
             #!/usr/bin/env bash
             export TESTING_FARM_API_TOKEN=$(cat /etc/secrets/testing-farm-secret/testing-farm-token)
@@ -88,8 +96,25 @@ spec:
               GIT_URL=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['url'])")
             fi
 
+            # Respect explicit input
             if [[ -z "$GIT_REF" ]]; then
-              GIT_REF=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['revision'])")
+              # Use merge/pull requests for checkout as the 'fork' might be private
+              if [[ -n "$PULL_REQUEST_NUMBER" ]]; then
+                case $GIT_PROVIDER in
+                  gitlab)
+                    GIT_REF="merge-request/$PULL_REQUEST_NUMBER/head"
+                    ;;
+                  github)
+                    GIT_REF="pull/$PULL_REQUEST_NUMBER/head"
+                    ;;
+                  *)
+                    echo Unknown git_provider=$GIT_PROVIDER, leaving git-ref untouched.
+                    ;;
+                esac
+              else
+                # Gather ref from SNAPSHOT itself
+                GIT_REF=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['revision'])")
+              fi
             fi
 
             # Inject token, otherwise testing farm can't clone the repo
