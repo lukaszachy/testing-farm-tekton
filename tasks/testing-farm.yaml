@@ -89,6 +89,10 @@ spec:
             secrets_file=$(mktemp)
             echo "AUTHFILE_b64: \"$(base64 -w 0 /etc/secrets/pull-secret-volume/.dockerconfigjson)\"" >> $secrets_file
 
+            find /etc/secrets
+            
+            exit 1
+
             if [[ -z "$GIT_URL" ]]; then
               GIT_URL=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['url'])")
             fi
