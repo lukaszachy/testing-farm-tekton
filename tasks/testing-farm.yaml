@@ -80,7 +80,15 @@ spec:
         - name: GIT_PROVIDER
           valueFrom:
             fieldRef:
-              fieldPath: metadata.annotations['pac.test.appstudio.openshift.io/git-provider']            
+              fieldPath: metadata.annotations['pac.test.appstudio.openshift.io/git-provider']
+        - name: SNAPSHOT_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['appstudio.openshift.io/snapshot']
+        - name: SCENARIO_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['test.appstudio.openshift.io/scenario']
       script: |
             #!/usr/bin/env bash
             export TESTING_FARM_API_TOKEN=$(cat /etc/secrets/testing-farm-secret/testing-farm-token)
@@ -119,6 +127,16 @@ spec:
             context_file=$(mktemp)
             echo 'trigger: commit' > $context_file
             echo 'initiator: konflux' >> $context_file
+
+            # Note which snapshot name is this request for
+            if [ -n "$SNAPSHOT_NAME" ]; then
+              echo "snapshot_name: $SNAPSHOT_NAME" >> $context_file
+            fi
+
+            # Note which scenario name is this request for
+            if [ -n "$SCENARIO_NAME" ]; then
+              echo "scenario_name: $SCENARIO_NAME" >> $context_file
+            fi
 
             tf_log=$(mktemp)
             
