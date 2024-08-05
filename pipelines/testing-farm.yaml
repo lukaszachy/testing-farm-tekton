@@ -4,53 +4,10 @@ metadata:
   name: tmt-via-testing-farm
 spec:
   description: >-
-    Secrets to provide:
-      Key/value with key `testing-farm-token` containing the testing-farm API token.
-      Provide name of this secret as `TESTING_FARM_TOKEN_SECRET_NAME` parameter.
-
-      Pull secret to the registry used by SNAPSHOT.
-      Provide name of this secret as `PULL_SECRET_NAME` parameter.
-
-    Expects params:
-      `SNAPSHOT` provided by the pipeline automatically
-      `PULL_SECRET_NAME` name of the Image pull secret
-      `TESTING_FARM_TOKEN_SECRET_NAME` name of the Key/value secret
+    TODO
   params:
     - name: SNAPSHOT
       description: A list of container images that should undergo testing
-    - name: PULL_SECRET_NAME
-      description: Image pull secret to inject into the Testing Farm jobs
-    - name: TESTING_FARM_TOKEN_SECRET_NAME
-      default: "testing-farm-secret"
-      description: Name of the Key/Value secret with testing-farm-token key
-    - name: GIT_URL
-      default: ""
-      description: URL of the GIT repository that contains the tests.
-    - name: GIT_REF
-      default: ""
-      description: Branch of the git repository used containing the tests
-    - name: TMT_PLAN
-      default: "."
-      description: Name filter for plans defined in the repo.
-    - name: COMPOSE
-      default: "Fedora-40"
-      description: Compose to use for the system-under-test.
-    - name: ARCH
-      default: "x86_64"
-      description: Comma-separated list of architectures to run against.
-    - name: TIMEOUT
-      default: "720"
-      description: Set the timeout for the request in minutes. If the test takes longer than this, it will be terminated.
-    - name: TESTING_FARM_API_URL
-      default: https://api.dev.testing-farm.io/v0.1
-      description: The testing-farm instance API to use
-  results:
-    - name: REQUEST_URL
-      value: "$(tasks.testing-farm.results.REQUEST_URL)"
-    - name: ARTIFACTS_URL
-      value: "$(tasks.testing-farm.results.ARTIFACTS_URL)"
-    - name: TEST_OUTPUT
-      value: "$(tasks.testing-farm.results.TEST_OUTPUT)"
   tasks:
     - name: testing-farm
       timeout: "5h"
@@ -60,27 +17,17 @@ spec:
           - name: url
             value: https://github.com/lukaszachy/testing-farm-tekton
           - name: revision
-            value: main
+            value: one-app-more-comps
           - name: pathInRepo
             value: tasks/testing-farm.yaml
       params:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
-        - name: PULL_SECRET_NAME
-          value: $(params.PULL_SECRET_NAME)
-        - name: TESTING_FARM_TOKEN_SECRET_NAME
-          value: $(params.TESTING_FARM_TOKEN_SECRET_NAME)
-        - name: GIT_URL
-          value: $(params.GIT_URL)
-        - name: GIT_REF
-          value: $(params.GIT_REF)
-        - name: TMT_PLAN
-          value: $(params.TMT_PLAN)
-        - name: COMPOSE
-          value: $(params.COMPOSE)
-        - name: ARCH
-          value: $(params.ARCH)
-        - name: TIMEOUT
-          value: $(params.TIMEOUT)
-        - name: TESTING_FARM_API_URL
-          value: $(params.TESTING_FARM_API_URL)
+        - name: APPLICATION
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['appstudio.openshift.io/application']
+        - name: COMPONENT
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['appstudio.openshift.io/component']

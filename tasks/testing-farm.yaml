@@ -3,177 +3,22 @@ kind: Task
 metadata:
   name: testing-farm
 spec:
-  description: Initiate testing-farm test given a list of container images
+  description: TODO
   params:
     - name: SNAPSHOT
       description: A list of container images that should undergo testing
-    - name: PULL_SECRET_NAME
-      description: Image pull secret to inject into the Testing Farm jobs
-    - name: TESTING_FARM_TOKEN_SECRET_NAME
-      default: "testing-farm-secret"
-      description: Name of the Key/Value secret with testing-farm-token key
-    - name: GIT_URL
-      default: ""
-      description: URL of the GIT repository that contains the tests.
-    - name: TMT_PLAN
-      default: "."
-      description: Name filter for plans defined in the repo.
-    - name: GIT_REF
-      default: ""
-      description: Branch of the git repository used containing the tests
-    - name: COMPOSE
-      default: "Fedora-40"
-      description: Compose to use for the system-under-test.
-    - name: ARCH
-      default: "x86_64"
-      description: Comma-separated list of architectures to run against.
-    - name: TIMEOUT
-      default: "720"
-      description: Set the timeout for the request in minutes. If the test takes longer than this, it will be terminated.
-    - name: TESTING_FARM_API_URL
-      default: https://api.dev.testing-farm.io/v0.1
-      description: The testing-farm instance API to use
-  results:
-    - description: Link to track the request
-      name: REQUEST_URL
-    - description: Link to the Testing Farm result overview  
-      name: ARTIFACTS_URL
-    - description: Test outcome
-      name: TEST_OUTPUT
-  volumes:
-    - name: testing-farm-secret
-      secret:
-        secretName: "$(params.TESTING_FARM_TOKEN_SECRET_NAME)"
-    - name: pull-secret-volume
-      secret:
-        secretName: "$(params.PULL_SECRET_NAME)"
+    - name: APPLICATION
+    - name: COMPONENT
   steps:
     - image: quay.io/testing-farm/cli:latest
-      volumeMounts:
-        - name: testing-farm-secret
-          mountPath: "/etc/secrets/testing-farm-secret"
-          readOnly: true
-        - name: pull-secret-volume
-          mountPath: "/etc/secrets/pull-secret-volume"
-          readOnly: true
       env:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
-        - name: GIT_URL
-          value: $(params.GIT_URL)
-        - name: GIT_REF
-          value: $(params.GIT_REF)
-        - name: COMPOSE
-          value: $(params.COMPOSE)
-        - name: ARCH
-          value: $(params.ARCH)
-        - name: TIMEOUT
-          value: $(params.TIMEOUT)
-        - name: TESTING_FARM_API_URL
-          value: $(params.TESTING_FARM_API_URL)
-        - name: TMT_PLAN
-          value: $(params.TMT_PLAN)
-        - name: PULL_REQUEST_NUMBER
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['pac.test.appstudio.openshift.io/pull-request']
-        - name: GIT_PROVIDER
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['pac.test.appstudio.openshift.io/git-provider']
-        - name: SNAPSHOT_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.labels['appstudio.openshift.io/snapshot']
-        - name: INTEGRATION_TEST_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.labels['test.appstudio.openshift.io/scenario']
+        - name: APPLICATION
+          value: $(params.APPLICATION)
+        - name: COMPONENT
+          value: $(params.COMPONENT)          
       script: |
             #!/usr/bin/env bash
-            export TESTING_FARM_API_TOKEN=$(cat /etc/secrets/testing-farm-secret/testing-farm-token)
-
-            # Prepare secrets for testing farm
-            secrets_file=$(mktemp)
-            echo "AUTHFILE_b64: \"$(base64 -w 0 /etc/secrets/pull-secret-volume/.dockerconfigjson)\"" >> $secrets_file
-
-            if [[ -z "$GIT_URL" ]]; then
-              GIT_URL=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['url'])")
-            fi
-
-            # Respect explicit input
-            if [[ -z "$GIT_REF" ]]; then
-              # Use merge/pull requests for checkout as the 'fork' might be private
-              if [[ -n "$PULL_REQUEST_NUMBER" ]]; then
-                case $GIT_PROVIDER in
-                  gitlab)
-                    GIT_REF="merge-requests/$PULL_REQUEST_NUMBER/head"
-                    ;;
-                  github)
-                    GIT_REF="pull/$PULL_REQUEST_NUMBER/head"
-                    ;;
-                  *)
-                    echo Unknown git_provider=$GIT_PROVIDER, leaving git-ref untouched.
-                    ;;
-                esac
-              fi
-            fi
-            # Previous branch might not fill it
-            if [[ -z "$GIT_REF" ]]; then
-              # Gather ref from SNAPSHOT itself
-              GIT_REF=$(python3 -c "import os; import json; print(json.loads(os.environ['SNAPSHOT'])['components'][0]['source']['git']['revision'])")
-            fi
-
-            context_file=$(mktemp)
-            echo 'trigger: commit' > $context_file
-            echo 'initiator: konflux' >> $context_file
-
-            # Name of the snapshot
-            if [ -n "$SNAPSHOT_NAME" ]; then
-              echo "snapshot_name: $SNAPSHOT_NAME" >> $context_file
-            fi
-
-            # Name of the integration test
-            if [ -n "$INTEGRATION_TEST_NAME" ]; then
-              echo "integration_test_name: $INTEGRATION_TEST_NAME" >> $context_file
-            fi
-
-            tf_log=$(mktemp)
-            
-            declare -p SNAPSHOT
-            testing-farm request \
-                --secret @$secrets_file \
-                --environment SNAPSHOT_b64="$(echo ${SNAPSHOT} | base64 -w 0)" \
-                --plan "${TMT_PLAN}" \
-                --context @$context_file \
-                --git-url "${GIT_URL}" \
-                --git-ref "${GIT_REF}" \
-                --compose "${COMPOSE}" \
-                --arch "${ARCH}" \
-                --timeout "${TIMEOUT}" \
-                --no-wait |& tee $tf_log
-            
-            echo "scheduled, now proceeding to wait on TF to finish its job"
-                
-            # we cannot use --wait as tf cli suffer https://issues.redhat.com/browse/TFT-2604
-            request_url=$(grep -oE "${TESTING_FARM_API_URL}.*$" $tf_log)
-            echo "${request_url}" > $(results.REQUEST_URL.path)
-            
-            watcher=$(mktemp)
-            parser=$(mktemp)
-            
-            request_outcome=$(mktemp)
-            
-            echo "Will be checking $request_url ..."
-            
-            # Fetch helper scripts (no curl here...)
-            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py -O $watcher
-            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-parse.py -O $parser
-
-            # Watch until request finishes
-            python3 $watcher $request_url $request_outcome
-            
-            # Parse and make the output
-            python3 $parser $request_outcome $(results.ARTIFACTS_URL.path) $(results.TEST_OUTPUT.path)
-            
+            env | sort            
             
