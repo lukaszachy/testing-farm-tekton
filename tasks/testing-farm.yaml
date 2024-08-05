@@ -7,17 +7,19 @@ spec:
   params:
     - name: SNAPSHOT
       description: A list of container images that should undergo testing
-    - name: APPLICATION
-    - name: COMPONENT
   steps:
     - image: quay.io/testing-farm/cli:latest
       env:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
         - name: APPLICATION
-          value: $(params.APPLICATION)
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['appstudio.openshift.io/application']
         - name: COMPONENT
-          value: $(params.COMPONENT)          
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['appstudio.openshift.io/component']          
       script: |
             #!/usr/bin/env bash
             env | sort            
