@@ -14,6 +14,27 @@ spec:
     - name: TESTING_FARM_TOKEN_SECRET_NAME
       default: "testing-farm-secret"
       description: Name of the Key/Value secret with testing-farm-token key
+    - name: GIT_URL
+      default: ""
+      description: URL of the GIT repository that contains the tests.
+    - name: TMT_PLAN
+      default: "."
+      description: Name filter for plans defined in the repo.
+    - name: GIT_REF
+      default: ""
+      description: Branch of the git repository used containing the tests
+    - name: COMPOSE
+      default: "Fedora-40"
+      description: Compose to use for the system-under-test.
+    - name: ARCH
+      default: "x86_64"
+      description: Comma-separated list of architectures to run against.
+    - name: TIMEOUT
+      default: "720"
+      description: Set the timeout for the request in minutes. If the test takes longer than this, it will be terminated.
+    - name: TESTING_FARM_API_URL
+      default: https://api.dev.testing-farm.io/v0.1
+      description: The testing-farm instance API to use
   results:
     - name: REQUEST_URL
       value: "$(tasks.schedule.results.tf-request)"
@@ -50,3 +71,5 @@ spec:
           value: "$(tasks.pre-process.results.pull-secret-name)"
         - name: TESTING_FARM_TOKEN_SECRET_NAME
           value: "$(params.TESTING_FARM_TOKEN_SECRET_NAME)"
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)          
