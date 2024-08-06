@@ -72,4 +72,20 @@ spec:
         - name: TESTING_FARM_TOKEN_SECRET_NAME
           value: "$(params.TESTING_FARM_TOKEN_SECRET_NAME)"
         - name: SNAPSHOT
-          value: $(params.SNAPSHOT)          
+          value: $(params.SNAPSHOT)
+    - name: wait-for-results
+      runAfter:
+      - schedule
+      timeout: "10m"
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/lukaszachy/testing-farm-tekton
+          - name: revision
+            value: one-app-more-comps
+          - name: pathInRepo
+            value: tasks/wait-for-results.yaml
+      params:
+        - name: TF_REQUEST
+          value: "$(tasks.schedule.results.tf-request)"

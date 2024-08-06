@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: tf-pre-process
+spec:
+  description: TODO
+  params:
+    - name: TF_REQUEST
+  results:
+    - description: Link to the Testing Farm result overview  
+      name: ARTIFACTS_URL
+    - description: Test outcome
+      name: TEST_OUTPUT
+  steps:
+    - name: wait-for-results
+      image: quay.io/testing-farm/cli:latest
+      env:
+        - name: TF_REQUEST
+          value: $(params.TF_REQUEST)        
+      script: |
+            #!/usr/bin/env bash
+            watcher=$(mktemp)
+            parser=$(mktemp)
+            
+            request_outcome=$(mktemp)
+            
+            echo "Will be checking $TF_REQUEST ..."
+            
+            # Fetch helper scripts (no curl here...)
+            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py -O $watcher
+            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-parse.py -O $parser
+
+            # Watch until request finishes
+            python3 $watcher $TF_REQUEST $request_outcome
+            
+            # Parse and make the output
+            python3 $parser $request_outcome $(results.ARTIFACTS_URL.path) $(results.TEST_OUTPUT.path)
+            
+
