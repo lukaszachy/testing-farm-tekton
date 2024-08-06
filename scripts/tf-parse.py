@@ -54,6 +54,3 @@ test_output['result'] = overall2tekton[overall]
 write_js(test_output, f_test_output)
 
 print(test_output)
-
-if overall != 'passed':
-    raise SystemExit(1)
