@@ -136,10 +136,8 @@ spec:
             fi
 
             tf_log=$(mktemp)
-            
-            declare -p SNAPSHOT
-            # FIXME ... no need to trigger real call yet
-            echo testing-farm request \
+                        
+            testing-farm request \
                 --secret @$secrets_file \
                 --environment SNAPSHOT_b64="$(echo ${SNAPSHOT} | base64 -w 0)" \
                 --plan "${TMT_PLAN}" \
@@ -152,6 +150,4 @@ spec:
                 --no-wait |& tee $tf_log
 
             request_url=$(grep -oE "${TESTING_FARM_API_URL}.*$" $tf_log)
-            request_url="FIXME_LATER"
             echo -n "${request_url}" > $(results.tf-request.path)
-            exit 1

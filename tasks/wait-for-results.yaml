@@ -25,6 +25,10 @@ spec:
             request_outcome=$(mktemp)
             
             echo "Will be checking $TF_REQUEST ..."
+            if [[ -z $TF_REQUEST ]]; then
+              echo Nothing to check
+              exit 1
+            fi
             
             # Fetch helper scripts (no curl here...)
             wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py -O $watcher
