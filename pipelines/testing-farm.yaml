@@ -48,3 +48,5 @@ spec:
       params:
         - name: PULL_SECRET_NAME
           value: "$(tasks.pre-process.results.pull-secret-name)"
+        - name: TESTING_FARM_TOKEN_SECRET_NAME
+          value: "$(params.TESTING_FARM_TOKEN_SECRET_NAME)"
