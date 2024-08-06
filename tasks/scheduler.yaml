@@ -97,6 +97,8 @@ spec:
             # SNAPSHOT can contain multiple components, we are interested only in the one for 'COMPONENT'
             _git_url=$(python3 -c "import os; import json; print([v for v in json.loads(os.environ['SNAPSHOT'])['components'] if v['name'] == '$COMPONENT'][0]['source']['git']['url'])")
             _git_ref=$(python3 -c "import os; import json; print([v for v in json.loads(os.environ['SNAPSHOT'])['components'] if v['name'] == '$COMPONENT'][0]['source']['git']['revision'])")
+            _image_url=$(python3 -c "import os; import json; print([v for v in json.loads(os.environ['SNAPSHOT'])['components'] if v['name'] == '$COMPONENT'][0]['containerImage'])")
+            _image_name=$COMPONENT
 
             if [[ -z "$GIT_URL" ]]; then
               GIT_URL=$_git_url
@@ -140,6 +142,8 @@ spec:
             testing-farm request \
                 --secret @$secrets_file \
                 --environment SNAPSHOT_b64="$(echo ${SNAPSHOT} | base64 -w 0)" \
+                --environment IMAGE_URL="$_image_url" \
+                --environment IMAGE_NAME="$_image_name" \
                 --plan "${TMT_PLAN}" \
                 --context @$context_file \
                 --git-url "${GIT_URL}" \
