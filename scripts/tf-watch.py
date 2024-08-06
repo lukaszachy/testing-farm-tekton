@@ -4,14 +4,29 @@ import sys
 import time  
 import json
 
+
 SLEEP = 60
 
+previous_state = None
+
+retry_adapter = requests.HTTPAdapter(max_retries=requests.Retry(total=10,
+                backoff_factor=0.2))
+session = requests.Session()
+session.mount('http://', retry_adapter)
+session.mount('https://', retry_adapter)
+
 while True:
-    ret = requests.get(sys.argv[1]).json()
+    ret = session.get(sys.argv[1]).json()
     state = ret['state']
-    print(f'{state=}', file=sys.stderr)
+    if state == previous_state:
+        print('.', end=None, file=sys.stderr)
+    else:
+        if previous_state is not None:
+            print()
+        print(f'{state=}', file=sys.stderr)
+        previous_state = state
     if state not in ['new', 'queued', 'running']:
-        print(f'\nStop waiting as {state=}', file=sys.stderr)
+        print(f'Stop waiting as {state=}', file=sys.stderr)
         break
     time.sleep(SLEEP) 
 
