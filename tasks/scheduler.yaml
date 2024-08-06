@@ -39,7 +39,7 @@ spec:
   results:
     - name: tf-request
   steps:
-    - name: future-pre-process
+    - name: scheduler
       image: quay.io/testing-farm/cli:latest
       volumeMounts:
         - name: pull-secret-volume
@@ -93,6 +93,7 @@ spec:
             secrets_file=$(mktemp)
             echo "AUTHFILE_b64: \"$(base64 -w 0 /etc/secrets/pull-secret-volume/.dockerconfigjson)\"" >> $secrets_file
 
+            set -x
             # SNAPSHOT can contain multiple components, we are interested only in the one for 'COMPONENT'
             _git_url=$(python3 -c "import os; import json; print([v for v in json.loads(os.environ['SNAPSHOT'])['components'] if v['name'] == '$COMPONENT'][0]['source']['git']['url'])")
             _git_ref=$(python3 -c "import os; import json; print([v for v in json.loads(os.environ['SNAPSHOT'])['components'] if v['name'] == '$COMPONENT'][0]['source']['git']['revision'])")

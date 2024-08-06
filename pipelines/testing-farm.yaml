@@ -37,7 +37,11 @@ spec:
       description: The testing-farm instance API to use
   results:
     - name: REQUEST_URL
-      value: "$(tasks.schedule.results.tf-request)"
+      value: "$(tasks.scheduler.results.tf-request)"
+    - name: ARTIFACTS_URL
+      value: "$(tasks.wait-for-results.results.ARTIFACTS_URL)"
+    - name: TEST_OUTPUT
+      value: "$(tasks.wait-for-results.results.TEST_OUTPUT)"
   tasks:
     - name: pre-process
       timeout: "5m"
@@ -53,7 +57,7 @@ spec:
       params:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
-    - name: schedule
+    - name: scheduler
       runAfter:
         - pre-process
       timeout: "5m"
@@ -75,8 +79,8 @@ spec:
           value: $(params.SNAPSHOT)
     - name: wait-for-results
       runAfter:
-      - schedule
-      timeout: "10m"
+      - scheduler
+      timeout: "5h"
       taskRef:
         resolver: git
         params:
@@ -88,4 +92,4 @@ spec:
             value: tasks/wait-for-results.yaml
       params:
         - name: TF_REQUEST
-          value: "$(tasks.schedule.results.tf-request)"
+          value: "$(tasks.scheduler.results.tf-request)"
