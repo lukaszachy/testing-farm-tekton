@@ -154,3 +154,4 @@ spec:
             request_url=$(grep -oE "${TESTING_FARM_API_URL}.*$" $tf_log)
             request_url="FIXME_LATER"
             echo -n "${request_url}" > $(results.tf-request.path)
+            exit 1
