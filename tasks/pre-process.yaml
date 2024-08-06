@@ -7,6 +7,9 @@ spec:
   params:
     - name: SNAPSHOT
       description: A list of container images that should undergo testing
+    - name: PULL_SECRET_NAME
+      description: Explicit name of pull secret to use, detected by app/comp name otherwise
+      default: ""
   results:
     - name: pull-secret-name
   steps:
@@ -25,6 +28,8 @@ spec:
               fieldPath: metadata.labels['appstudio.openshift.io/component']          
       script: |
             #!/usr/bin/env bash
-            env | sort
-            echo -n "imagerepository-for-${APPLICATION}-${COMPONENT}-image-pull" > $(results.pull-secret-name.path)
-
+            if [[ -n $PULL_SECRET_NAME ]]; then
+              echo -n "$PULL_SECRET_NAME" > $(results.pull-secret-name.path)
+            else
+              echo -n "imagerepository-for-${APPLICATION}-${COMPONENT}-image-pull" > $(results.pull-secret-name.path)
+            fi

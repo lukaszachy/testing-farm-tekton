@@ -10,6 +10,8 @@ spec:
     - name: pull-secret-volume
       secret:
         secretName: "$(params.PULL_SECRET_NAME)"
+  results:
+    - name: tf-request
   steps:
     - name: future-pre-process
       image: quay.io/testing-farm/cli:latest
