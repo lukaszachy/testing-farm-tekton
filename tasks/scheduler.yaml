@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: tf-scheduler
+spec:
+  description: TODO
+  params:
+    - name: PULL_SECRET_NAME
+  volumes:
+    - name: pull-secret-volume
+      secret:
+        secretName: "$(params.PULL_SECRET_NAME)"
+  steps:
+    - name: future-pre-process
+      image: quay.io/testing-farm/cli:latest
+      volumeMounts:
+        - name: pull-secret-volume
+          mountPath: "/etc/secrets/pull-secret-volume"
+          readOnly: true  
+      script: |
+            #!/usr/bin/env bash
+            env | sort
+            find /etc/secrets/pull-secret-volume
+

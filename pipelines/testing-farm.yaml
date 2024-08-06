@@ -9,8 +9,8 @@ spec:
     - name: SNAPSHOT
       description: A list of container images that should undergo testing
   tasks:
-    - name: testing-farm
-      timeout: "5h"
+    - name: pre-process
+      timeout: "5m"
       taskRef:
         resolver: git
         params:
@@ -19,7 +19,23 @@ spec:
           - name: revision
             value: one-app-more-comps
           - name: pathInRepo
-            value: tasks/testing-farm.yaml
+            value: tasks/pre-process.yaml
       params:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
+    - name: schedule
+      runAfter:
+        - pre-process
+      timeout: "5m"
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/lukaszachy/testing-farm-tekton
+          - name: revision
+            value: one-app-more-comps
+          - name: pathInRepo
+            value: tasks/scheduler.yaml
+      params:
+        - name: PULL_SECRET_NAME
+          value: "$(tasks.pre-process.results.pull-secret-name)"
