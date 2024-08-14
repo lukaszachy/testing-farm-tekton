@@ -23,9 +23,10 @@ if artifacts:
 
 
 # Process the results..
+updated_ts = datetime.datetime.fromisoformat(request['updated']).astimezone(datetime.timezone.utc)
 test_output = {
     'result': 'ERROR',
-    "timestamp": str(int(datetime.datetime.fromisoformat(request['updated']).timestamp())),
+    "timestamp": updated_ts.isoformat(),
     "successes": 0, 
     "failures": 0,
     "warnings": 0
