@@ -32,8 +32,8 @@ spec:
             fi
             
             # Fetch helper scripts (no curl here...)
-            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py -O $watcher
-            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-parse.py -O $parser
+            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/better/scripts/tf-watch.py -O $watcher
+            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/better/scripts/tf-parse.py -O $parser
 
             # Watch until request finishes
             python3 $watcher $TF_REQUEST $request_outcome
