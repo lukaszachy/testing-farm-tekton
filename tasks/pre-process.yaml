@@ -25,4 +25,4 @@ spec:
               fieldPath: metadata.labels['appstudio.openshift.io/component']
         - name: PULL_SECRET_NAME_RESULT_PATH
           value: $(results.pull-secret-name.path)
-      script: bash -e /usr/local/bin/tf-pre-process.sh
+      script: bash -v /usr/local/bin/tf-pre-process.sh

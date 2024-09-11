@@ -22,4 +22,4 @@ spec:
           value: $(results.ARTIFACTS_URL.path)
         - name: TEST_OUTPUT_RESULT_PATH
           value: $(results.TEST_OUTPUT.path)
-      script: bash -e /usr/local/bin/tf-wait-for-results.sh
+      script: bash -v /usr/local/bin/tf-wait-for-results.sh

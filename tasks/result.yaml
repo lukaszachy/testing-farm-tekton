@@ -11,4 +11,4 @@ spec:
   steps:
     - name: tf-result
       image: quay.io/testing-farm/cli:latest
-      script: bash -e /usr/local/bin/tf-result.sh $(params.PRODUCED_TEST_OUTPUT.path)
+      script: bash -v /usr/local/bin/tf-result.sh $(params.PRODUCED_TEST_OUTPUT)

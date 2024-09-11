@@ -89,4 +89,4 @@ spec:
               fieldPath: metadata.labels['appstudio.openshift.io/component']
         - name: TF_REQUEST_RESULT_PATH
           value: $(results.tf-request.path)
-      script: bash -e /usr/local/bin/tf-scheduler.sh
+      script: bash -v /usr/local/bin/tf-scheduler.sh
