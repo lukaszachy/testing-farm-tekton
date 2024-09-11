@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: tf-result
+spec:
+  description: >-
+    Task to Fail the pipeline if testing didn't pass.
+    Necessary until Konflux makes easier to spot failing tests in successful its.
+  params:
+    - name: PRODUCED_TEST_OUTPUT
+  steps:
+    - name: tf-result
+      image: quay.io/testing-farm/cli:latest
+      script: bash -e /usr/local/bin/tf-result.sh $(params.PRODUCED_TEST_OUTPUT.path)

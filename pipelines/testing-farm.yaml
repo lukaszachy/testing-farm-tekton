@@ -13,12 +13,13 @@ spec:
        Fills REQUEST_URL result with the link to the testing farm.
     3. Task "wait-for-results" waits until Testing farm finishes with the request and parses the output.
        Sets the final TEST_OUTPUT result as well as ARTIFACTS_URL to the overview of the test result.
+    4. Task "result" fails the pipeline if testing didn't pass. This is just to easier spot failing ITS
 
 
     Secret to create:
       Key/value with key `testing-farm-token` containing the testing-farm API token.
       Provide name of this secret as `TESTING_FARM_TOKEN_SECRET_NAME` parameter.
-      
+
     Required parameters:
       `SNAPSHOT` which is provided by the pipeline automatically
 
@@ -28,7 +29,6 @@ spec:
 
       TESTING_FARM_TOKEN_SECRET_NAME name of secret containing the testing-farm API token
         If not set the name "testing-farm-secret" is used.
-
 
   params:
     - name: SNAPSHOT
@@ -76,7 +76,7 @@ spec:
           - name: url
             value: https://github.com/lukaszachy/testing-farm-tekton
           - name: revision
-            value: main
+            value: put-into-image
           - name: pathInRepo
             value: tasks/pre-process.yaml
       params:
@@ -92,7 +92,7 @@ spec:
           - name: url
             value: https://github.com/lukaszachy/testing-farm-tekton
           - name: revision
-            value: main
+            value: put-into-image
           - name: pathInRepo
             value: tasks/scheduler.yaml
       params:
@@ -118,7 +118,7 @@ spec:
           value: $(params.TESTING_FARM_API_URL)
     - name: wait-for-results
       runAfter:
-      - scheduler
+        - scheduler
       timeout: "5h"
       taskRef:
         resolver: git
@@ -126,9 +126,24 @@ spec:
           - name: url
             value: https://github.com/lukaszachy/testing-farm-tekton
           - name: revision
-            value: main
+            value: put-into-image
           - name: pathInRepo
             value: tasks/wait-for-results.yaml
       params:
         - name: TF_REQUEST
           value: "$(tasks.scheduler.results.tf-request)"
+    - name: result
+      runAfter:
+        - wait-for-results
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/lukaszachy/testing-farm-tekton
+          - name: revision
+            value: put-into-image
+          - name: pathInRepo
+            value: tasks/result.yaml
+      params:
+        - name: PRODUCED_TEST_OUTPUT
+          value: "$(tasks.wait-for-results.results.TEST_OUTPUT)"

@@ -1,0 +1,9 @@
+FROM quay.io/testing-farm/cli:latest
+RUN apk add jq
+ENTRYPOINT /bin/bash
+COPY ./scripts/tf-parse.py /usr/local/bin
+COPY ./scripts/tf-watch.py /usr/local/bin
+COPY ./scripts/tf-pre-process.sh /usr/local/bin
+COPY ./scripts/tf-scheduler.sh /usr/local/bin
+COPY ./scripts/tf-wait-for-results.sh /usr/local/bin
+COPY ./scripts/tf-result.sh /usr/local/bin

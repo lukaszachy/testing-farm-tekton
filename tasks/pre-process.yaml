@@ -13,7 +13,7 @@ spec:
     - name: pull-secret-name
   steps:
     - name: tf-pre-process
-      image: quay.io/testing-farm/cli:latest
+      image: quay.io/lzachar/tf-in-konflux:latest
       env:
         - name: APPLICATION
           valueFrom:
@@ -22,11 +22,7 @@ spec:
         - name: COMPONENT
           valueFrom:
             fieldRef:
-              fieldPath: metadata.labels['appstudio.openshift.io/component']          
-      script: |
-            #!/usr/bin/env bash
-            if [[ -n $PULL_SECRET_NAME ]]; then
-              echo -n "$PULL_SECRET_NAME" > $(results.pull-secret-name.path)
-            else
-              echo -n "imagerepository-for-${APPLICATION}-${COMPONENT}-image-pull" > $(results.pull-secret-name.path)
-            fi
+              fieldPath: metadata.labels['appstudio.openshift.io/component']
+        - name: PULL_SECRET_NAME_RESULT_PATH
+          value: $(results.pull-secret-name.path)
+      script: bash -e /usr/local/bin/tf-pre-process.sh

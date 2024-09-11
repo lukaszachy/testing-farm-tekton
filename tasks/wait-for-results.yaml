@@ -8,41 +8,18 @@ spec:
   params:
     - name: TF_REQUEST
   results:
-    - description: Link to the Testing Farm result overview  
+    - description: Link to the Testing Farm result overview
       name: ARTIFACTS_URL
     - description: Test outcome
       name: TEST_OUTPUT
   steps:
     - name: wait-for-results
-      image: quay.io/testing-farm/cli:latest
+      image: quay.io/lzachar/tf-in-konflux:latest
       env:
         - name: TF_REQUEST
-          value: $(params.TF_REQUEST)        
-      script: |
-            #!/usr/bin/env bash
-            watcher=$(mktemp)
-            parser=$(mktemp)
-            
-            request_outcome=$(mktemp)
-            
-            echo "Will be checking $TF_REQUEST ..."
-            if [[ -z $TF_REQUEST ]]; then
-              echo Nothing to check
-              exit 1
-            fi
-            
-            # Fetch helper scripts (no curl here...)
-            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-watch.py -O $watcher
-            wget -q https://raw.githubusercontent.com/lukaszachy/testing-farm-tekton/main/scripts/tf-parse.py -O $parser
-
-            # Watch until request finishes
-            python3 $watcher $TF_REQUEST $request_outcome
-            
-            # Parse and make the output
-            python3 $parser $request_outcome $(results.ARTIFACTS_URL.path) $(results.TEST_OUTPUT.path)
-
-            # Until Konflux shows pass/fail/error directly in webui lets exit nonzero if testing has failed.
-            # Easier to spot not-passing ITS this way.
-            grep SUCCESS  $(results.TEST_OUTPUT.path)
-            
-
+          value: $(params.TF_REQUEST)
+        - name: ARTIFACTS_URL_RESULT_PATH
+          value: $(results.ARTIFACTS_URL.path)
+        - name: TEST_OUTPUT_RESULT_PATH
+          value: $(results.TEST_OUTPUT.path)
+      script: bash -e /usr/local/bin/tf-wait-for-results.sh
