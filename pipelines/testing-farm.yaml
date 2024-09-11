@@ -146,4 +146,4 @@ spec:
             value: tasks/result.yaml
       params:
         - name: PRODUCED_TEST_OUTPUT
-          value: "$(tasks.wait-for-results.results.TEST_OUTPUT.path)"
+          value: "$(tasks.wait-for-results.results.TEST_OUTPUT)"

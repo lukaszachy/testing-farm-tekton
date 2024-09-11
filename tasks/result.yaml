@@ -10,5 +10,8 @@ spec:
     - name: PRODUCED_TEST_OUTPUT
   steps:
     - name: tf-result
-      image: quay.io/testing-farm/cli:latest
-      script: bash -v /usr/local/bin/tf-result.sh $(params.PRODUCED_TEST_OUTPUT)
+      image: quay.io/lzachar/tf-in-konflux:latest
+      env:
+        - name: PRODUCED_TEST_OUTPUT
+          value: $(params.PRODUCED_TEST_OUTPUT)
+      script: bash -v /usr/local/bin/tf-result.sh
